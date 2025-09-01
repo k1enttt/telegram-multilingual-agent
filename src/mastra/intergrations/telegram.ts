@@ -1,5 +1,14 @@
 import TelegramBot from "node-telegram-bot-api";
 import { weatherAgent } from "../agents/weather-agent";
+import { InMemoryLanguageStore } from "../tools/language/language-store";
+import { LanguageService } from "../tools/language/language-service";
+import { loadLanguageConfig } from "../tools/language/language-config";
+
+const languageConfig = loadLanguageConfig();
+const languageService = new LanguageService(
+  new InMemoryLanguageStore(languageConfig.defaultLang),
+  languageConfig
+);
 
 /**
  * TelegramIntegration
@@ -159,6 +168,10 @@ export class TelegramIntegration {
     const username = msg.from?.username || "unknown";
     const firstName = msg.from?.first_name || "unknown";
     const userId = msg.from?.id.toString() || `anonymous-${chatId}`;
+    const { lang, source } = await languageService.ensureLanguage(
+      userId,
+      text || undefined
+    );
 
     if (!text) {
       await this.bot.sendMessage(
@@ -170,7 +183,9 @@ export class TelegramIntegration {
 
     // If ALWAYS_REPLY_OK=1, reply "ok" to every text message and stop further processing.
     if (process.env.ALWAYS_REPLY_OK === "1") {
-      console.info(`[telegram] state=always_reply_ok chatId=${chatId} userId=${userId}`);
+      console.info(
+        `[telegram] state=always_reply_ok chatId=${chatId} userId=${userId}`
+      );
       await this.bot.sendMessage(chatId, "ok");
       return;
     }
@@ -191,6 +206,10 @@ export class TelegramIntegration {
           {
             role: "system",
             content: `Current user: ${firstName} (${username})`,
+          },
+          {
+            role: "system",
+            content: `User preferred language: ${lang} (source=${source}). Respond ONLY in ${lang}.`,
           },
         ],
       });
