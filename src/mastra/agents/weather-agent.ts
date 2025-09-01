@@ -1,8 +1,26 @@
-import { openai } from '@ai-sdk/openai';
+import { createOpenAI } from '@ai-sdk/openai';
 import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
 import { weatherTool } from '../tools/weather-tool';
+
+const vllmModel = (process.env.VLLM_MODEL || 'gpt-oss-20b').trim();
+const vllmBaseURL = process.env.VLLM_BASE_URL?.trim();
+const vllmApiKey = (process.env.VLLM_API_KEY || 'dummy').trim();
+
+if (!vllmBaseURL) {
+  // eslint-disable-next-line no-console
+  console.warn('[weather-agent] VLLM_BASE_URL is not set. Set it in .env to your vLLM OpenAI-compatible endpoint, e.g. http://localhost:8000/v1');
+}
+
+// Create OpenAI-compatible client with custom baseURL (vLLM endpoint)
+const openai = createOpenAI({
+  apiKey: vllmApiKey,
+  baseURL: vllmBaseURL,
+});
+
+// Chat model selection (vLLM must expose this model id). Adjust if server returns different name.
+const model = openai.chat(vllmModel as any);
 
 export const weatherAgent = new Agent({
   name: 'Weather Agent',
@@ -20,7 +38,7 @@ export const weatherAgent = new Agent({
 
       Use the weatherTool to fetch current weather data.
 `,
-  model: openai('gpt-4o-mini'),
+  model,
   tools: { weatherTool },
   memory: new Memory({
     storage: new LibSQLStore({
