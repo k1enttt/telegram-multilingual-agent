@@ -1,5 +1,7 @@
 # Language Tool Agile TODO
 
+> File này đóng vai trò bảng điều phối Agile: liệt kê user stories, tasks, trạng thái, tiêu chí nghiệm thu và tiến độ theo phase.
+
 ## Epic
 As a multilingual Telegram agent, I need to remember each user's preferred language so that all responses are consistent without explicit commands.
 
@@ -43,11 +45,11 @@ Goal: Optional automatic detection stub + toggle.
 
 | ID | Task | Description | Acceptance Criteria | Est | Status |
 |----|------|-------------|----------------------|-----|--------|
-| P2-T1 | Add detect() placeholder | Return null if disabled or short text | ensureLanguage never returns source 'detected' unless enabled | 1 | TODO |
-| P2-T2 | Enable detection path | If enabled & no stored & length>=minDetectChars -> mock detect | Source = 'detected' when path triggered | 2 | TODO |
-| P2-T3 | Config param minDetectChars | env LANG_MIN_DETECT_CHARS | Behavior changes with env tweak | 1 | TODO |
-| P2-T4 | Tests for detection logic | Cover short text, disabled, enabled | All pass | 2 | TODO |
-| P2-R1 | Review & refine logging | Adds detection source log line | Logs contain 'lang-detected' entries | 1 | TODO |
+| P2-T1 | Add detect() placeholder | Return null if disabled or short text | ensureLanguage never returns source 'detected' unless enabled | 1 | DONE |
+| P2-T2 | Enable detection path | If enabled & no stored & length>=minDetectChars -> mock detect | Source = 'detected' when path triggered | 2 | DONE |
+| P2-T3 | Config param minDetectChars | env LANG_MIN_DETECT_CHARS | Behavior changes with env tweak | 1 | DONE |
+| P2-T4 | Tests for detection logic | Cover short text, disabled, enabled | All pass | 2 | DONE |
+| P2-R1 | Review & refine logging | Adds detection source log line | Logs contain 'lang-detected' entries | 1 | DONE |
 
 Definition of Done (Phase 2)
 - Detection path gated by env

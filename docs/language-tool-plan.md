@@ -1,5 +1,7 @@
 # Kế hoạch phát triển Language State Tool (đã bỏ lệnh /lang)
 
+> File này mô tả định hướng kiến trúc tổng thể, API, lộ trình các phase và quyết định thiết kế cốt lõi cho Language State Tool.
+
 ## 1. Mục tiêu & Phạm vi
 - Lưu và truy xuất ngôn ngữ hiện tại theo user (userId/chatId).
 - Tự động chèn ngôn ngữ vào context agent trước khi gọi LLM.

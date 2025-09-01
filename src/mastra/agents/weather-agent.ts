@@ -3,6 +3,7 @@ import { Agent } from '@mastra/core/agent';
 import { Memory } from '@mastra/memory';
 import { LibSQLStore } from '@mastra/libsql';
 import { weatherTool } from '../tools/weather-tool';
+import { languageTool } from '../tools/language/language-tool';
 
 const vllmModel = (process.env.VLLM_MODEL || 'gpt-oss-20b').trim();
 const vllmBaseURL = process.env.VLLM_BASE_URL?.trim();
@@ -39,7 +40,7 @@ export const weatherAgent = new Agent({
       Use the weatherTool to fetch current weather data.
 `,
   model,
-  tools: { weatherTool },
+  tools: { weatherTool, languageTool },
   memory: new Memory({
     storage: new LibSQLStore({
       url: 'file:../mastra.db', // path is relative to the .mastra/output directory

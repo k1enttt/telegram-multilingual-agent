@@ -1,14 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import { weatherAgent } from "../agents/weather-agent";
-import { InMemoryLanguageStore } from "../tools/language/language-store";
-import { LanguageService } from "../tools/language/language-service";
-import { loadLanguageConfig } from "../tools/language/language-config";
-
-const languageConfig = loadLanguageConfig();
-const languageService = new LanguageService(
-  new InMemoryLanguageStore(languageConfig.defaultLang),
-  languageConfig
-);
+import { sharedLanguageService } from "../tools/language/language-tool"; // for optional response language logging
 
 /**
  * TelegramIntegration
@@ -168,10 +160,9 @@ export class TelegramIntegration {
     const username = msg.from?.username || "unknown";
     const firstName = msg.from?.first_name || "unknown";
     const userId = msg.from?.id.toString() || `anonymous-${chatId}`;
-    const { lang, source } = await languageService.ensureLanguage(
-      userId,
-      text || undefined
-    );
+  // Language preference integration removed. Agent/tool is now responsible for
+  // deciding and enforcing response language if needed.
+  // (Previously: ensureLanguage & system prompt injection.)
 
     if (!text) {
       await this.bot.sendMessage(
@@ -196,21 +187,14 @@ export class TelegramIntegration {
       let currentResponse = "";
       let lastUpdate = Date.now();
       let currentMessageId = sentMessage.message_id;
-      const UPDATE_INTERVAL = 500; // Update every 500ms to avoid rate limits
+      const UPDATE_INTERVAL = 500; // Update every 500ms to avoid rate limitslàm
 
       // Stream response using the agent
       const stream = await weatherAgent.stream(text, {
         threadId: `telegram-${chatId}`, // Use chat ID as thread ID
         resourceId: userId, // Use user ID as resource ID
         context: [
-          {
-            role: "system",
-            content: `Current user: ${firstName} (${username})`,
-          },
-          {
-            role: "system",
-            content: `User preferred language: ${lang} (source=${source}). Respond ONLY in ${lang}.`,
-          },
+          { role: "system", content: `Current user: ${firstName} (${username})` },
         ],
       });
 
@@ -277,11 +261,22 @@ export class TelegramIntegration {
       }
 
       // Final update
-      await this.updateOrSplitMessage(
-        chatId,
-        currentMessageId,
-        currentResponse
-      );
+      await this.updateOrSplitMessage(chatId, currentMessageId, currentResponse);
+
+      // Optional: detect and log response language (non-intrusive)
+      if (process.env.LOG_RESPONSE_LANG === '1') {
+        try {
+          const detected = await sharedLanguageService.detect(currentResponse);
+            console.log(JSON.stringify({
+              component: 'language',
+              event: 'response_lang',
+              detected: detected || 'unknown',
+              length: currentResponse.length,
+            }));
+        } catch (e) {
+          console.warn('[language] response_lang_detection_error', e);
+        }
+      }
     } catch (error) {
       console.error("Error processing message:", error);
       await this.bot.sendMessage(

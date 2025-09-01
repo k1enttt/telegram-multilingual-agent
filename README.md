@@ -6,12 +6,27 @@ Dự án này là một agent tích hợp với Telegram, cho phép người dù
 
 ## Tính năng
 - Tích hợp với Telegram Bot API
-- Đổi ngôn ngữ giao diện và phản hồi theo yêu cầu người dùng
-- Hỗ trợ nhiều tác vụ tự động hóa (ví dụ: tra cứu thời tiết)
-- Dễ dàng mở rộng thêm các agent và workflow mới
+- Ghi nhớ & tự động phát hiện (heuristic) ngôn ngữ người dùng (bật qua env)
+- Phản hồi theo ngôn ngữ đã lưu mà không cần chỉ định lại mỗi lần
+- Hỗ trợ tác vụ mẫu (tra cứu thời tiết) và dễ mở rộng thêm agent/workflow
 
-### Tool quản lý ngôn ngữ người dùng
-Đây là thành phần quan trọng giúp agent ghi nhớ và phản hồi đúng ngôn ngữ mà từng người dùng đã chọn trong mọi phiên làm việc. Tool này lưu trạng thái ngôn ngữ cho từng user, cho phép đổi ngôn ngữ linh hoạt mà không cần truyền lại thông tin qua mỗi prompt. Nhờ đó, trải nghiệm đa ngôn ngữ trở nên nhất quán, cá nhân hóa và dễ mở rộng cho các tác vụ tự động hóa khác.
+### Tool quản lý/nghiệm ngôn ngữ người dùng
+Thành phần chịu trách nhiệm:
+- Lưu ngôn ngữ ưu tiên theo user (in-memory Phase 1).
+- (Phase 2) Thử phát hiện ngôn ngữ từ nội dung đầu vào nếu chưa có stored và đủ độ dài.
+- Chèn system prompt: `Respond ONLY in <lang>.` vào context agent.
+
+Hiện chưa có lệnh / menu đổi ngôn ngữ thủ công; có thể bổ sung trong tương lai (thay vì dòng README cũ “Đổi ngôn ngữ bằng lệnh”). Nếu cần ép đổi, có thể tạm gọi trực tiếp `LanguageService.setLanguage` trong mã.
+
+#### Language Tool (Tool cho Agent)
+- Tool ID: `language-tool`.
+- Chức năng: đảm bảo hoặc chuyển ngôn ngữ người dùng.
+- Input:
+   - `userId` (bắt buộc)
+   - `targetLang` (tùy chọn) nếu muốn ép chuyển sang mã ngôn ngữ đã hỗ trợ.
+   - `sampleText` (tùy chọn) để heuristic phát hiện khi chưa có stored.
+- Output: `{ lang, source: stored|detected|default|forced, systemPrompt, supported }`.
+- Chiến lược dùng trong prompt agent: Gọi `language-tool` đầu cuộc trò chuyện với `userId` + `sampleText` để lấy systemPrompt và sau đó tuân thủ.
 
 ## Cài đặt
 1. Clone dự án:
@@ -33,7 +48,7 @@ Dự án này là một agent tích hợp với Telegram, cho phép người dù
   pnpm start
   ```
 - Tương tác với bot qua Telegram
-- Đổi ngôn ngữ bằng lệnh hoặc menu bot
+// (Chưa hỗ trợ lệnh đổi ngôn ngữ trực tiếp; detection hoặc default)
 
 ## Cấu trúc dự án
 - `src/mastra/agents/`: Các agent xử lý tác vụ
@@ -59,6 +74,17 @@ Ghi chú:
 - Nếu `DEFAULT_LANG` không nằm trong `SUPPORTED_LANGS` thì sẽ được tự thêm.
 - Khi `ENABLE_LANG_DETECTION=0` hệ thống chỉ dùng stored hoặc default.
 - `LANG_MIN_DETECT_CHARS` chỉ áp dụng khi bật detection.
+ - Detection hiện dùng heuristic regex ký tự đặc trưng (không gọi model). Muốn tắt → đặt ENABLE_LANG_DETECTION=0.
+
+## Scripts hữu ích
+```
+pnpm dev         # Chạy môi trường phát triển (mastra dev)
+pnpm test        # Chạy unit tests (Vitest)
+pnpm typecheck   # Kiểm tra kiểu TypeScript
+pnpm build && pnpm start  # Build & chạy production
+```
+
+Yêu cầu Node: >= 20.9.0 (xem engines trong package.json).
 
 ## Đóng góp
 Mọi đóng góp đều được hoan nghênh! Vui lòng tạo pull request hoặc liên hệ qua issues.
